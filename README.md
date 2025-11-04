@@ -19,10 +19,12 @@ git clone <your-repo-url>
 cd <project-root>
 npm install
 
+###
 #  Run Locally
 npm run dev
 # Visit http://localhost:3000
 
+###
 # Production Build
 npm run build
 npm start
