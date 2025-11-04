@@ -1,4 +1,3 @@
-// hooks/useBinanceSocket.tsx
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { useOrderBookStore } from '../store/orderbookStore'
@@ -27,15 +26,9 @@ type AggTradeEvent = {
   M: boolean
 }
 
-/**
- * useBinanceSocket
- * - symbol: trading pair like "BTCUSDT"
- * - opts.mock: when true, uses /api/mock-snapshot + simulated trades (no websocket)
- */
 export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
   const [connected, setConnected] = useState(false)
 
-  // Select the specific store functions we need (stable references, avoids weird "not a function" errors)
   const applySnapshot = useOrderBookStore(s => s.applySnapshot)
   const applyDeltas = useOrderBookStore(s => s.applyDeltas)
   const pushTrade = useOrderBookStore(s => s.pushTrade)
@@ -81,7 +74,6 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
           if (!snapshotAppliedRef.current) bufferRef.current.push(payload)
           else handlePayload(payload)
         } catch (e) {
-          // ignore malformed
         }
       }
 
@@ -108,7 +100,6 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
         if (opts.mock) {
           res = await axios.get(`/api/mock-snapshot`)
         } else {
-          // server-side proxy endpoint (pages/api/depth.ts) to avoid CORS issues
           res = await axios.get(`/api/depth`, { params: { symbol: symbol.toUpperCase(), limit: 1000 } })
         }
         const snapshot = res.data
@@ -117,7 +108,6 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
         snapshotAppliedRef.current = true
         setStatus({ snapshotStatus: 'applied', lastError: undefined })
 
-        // process buffered events per Binance docs
         const buf = bufferRef.current.slice()
         bufferRef.current = []
 
@@ -136,7 +126,6 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
         }
       } catch (err: any) {
         setStatus({ snapshotStatus: 'error', lastError: String(err?.message ?? err) })
-        // retry snapshot after short delay
         setTimeout(fetchSnapshot, 1500)
       }
     }
@@ -154,19 +143,18 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
       if (d.a && d.a.length) applyDeltas('asks', d.a)
     }
 
-    const handleAgg = (t: AggTradeEvent) => {
-      const side = t.m ? 'sell' : 'buy'
-      const trade = {
-        id: t.a ?? `${t.T}-${Math.random()}`,
-        price: Number(t.p),
-        qty: Number(t.q),
-        time: t.T,
-        side,
-      }
-      pushTrade(trade)
-    }
+  const handleAgg = (t: AggTradeEvent) => {
+  const side = t.m ? "sell" : "buy"
+  const trade = {
+    id: t.a ?? `${t.T}-${Math.random()}`,
+    price: Number(t.p),
+    qty: Number(t.q),
+    time: t.T,
+    side: side as "buy" | "sell",
+  }
+  pushTrade(trade)
+}
 
-    // Mock mode: fetch snapshot and simulate trades — no websocket used
     if (opts.mock) {
       setStatus({ snapshotStatus: 'fetching', lastError: undefined })
       ;(async () => {
@@ -181,7 +169,6 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
           }
           pushTrade(t)
         }, 800)
-        // return cleanup function for the interval
         return () => clearInterval(iv)
       })()
       return () => {}
