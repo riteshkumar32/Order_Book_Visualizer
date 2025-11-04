@@ -160,14 +160,15 @@ export function useBinanceSocket(symbol: string, opts:{mock?:boolean} = {}) {
       ;(async () => {
         await fetchSnapshot()
         const iv = setInterval(() => {
-          const t = {
-            id: Date.now(),
-            price: Number((30000 + (Math.random()*200 - 100)).toFixed(2)),
-            qty: Number((Math.random()*3 + 0.01).toFixed(4)),
-            time: Date.now(),
-            side: Math.random() > 0.5 ? 'buy' : 'sell'
-          }
-          pushTrade(t)
+         const t = {
+  id: Date.now(),
+  price: Number((30000 + (Math.random()*200 - 100)).toFixed(2)),
+  qty: Number((Math.random()*3 + 0.01).toFixed(4)),
+  time: Date.now(),
+  side: (Math.random() > 0.5 ? 'buy' : 'sell') as "buy" | "sell"
+}
+pushTrade(t)
+
         }, 800)
         return () => clearInterval(iv)
       })()
