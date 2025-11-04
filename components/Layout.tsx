@@ -9,7 +9,7 @@ export const Layout: React.FC<{children: React.ReactNode}> = ({children}) => {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Order Book Visualizer</h1>
-            <p className="text-sm text-slate-400">Real-time depth & trades · Professional UI</p>
+            <p className="text-sm text-slate-400">Real-time depth & trades ·</p>
           </div>
           <div className="text-sm text-slate-400 text-right">
             <div>Live · Binance Spot</div>
