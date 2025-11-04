@@ -1,100 +1,94 @@
-Order Book Visualizer
+#  Order Book Visualizer
 
-Live demo: https://orderbookvisualizer2025.netlify.app/
+** Live Demo:** [orderbookvisualizer2025.netlify.app](https://orderbookvisualizer2025.netlify.app/)
 
-A high-performance, real-time order book visualizer built with Next.js + TypeScript.
-Streams live market data from Binance (order book deltas + aggregated trades), maintains an efficient in-memory order book, and renders depth bars, spread and recent trades with minimal UI work on each update.
+A **real-time Order Book Visualizer** built using **Next.js + TypeScript**, streaming **live market data from Binance**.  
+It efficiently maintains and displays bid–ask depth, price spread, and recent trades — updating seamlessly without UI lag.
 
-Quick start
+---
 
-Requirements
+##  Quick Start
 
-Node.js ≥ 18
+### **Requirements**
+- Node.js ≥ 18  
+- npm ≥ 9  
 
-npm ≥ 9
-
-Install
-
+### **Setup**
+```bash
 git clone <your-repo-url>
 cd <project-root>
 npm install
 
-
-Run (development)
-
+#  Run Locally
 npm run dev
-# open http://localhost:3000
+# Visit http://localhost:3000
 
-
-Build & Run (production)
-
+# Production Build
 npm run build
-npm run start
-# production server serves .next build
+npm start
 
 
-The dev script sets NEXT_TURBOPACK=0 (via cross-env) to use the legacy dev server for stable local development. You can remove that if you prefer Turbopack.
+# Features
 
-How this satisfies the assignment
+ Live Binance Feeds
 
-Live Binance feeds: client opens the combined streams /<symbol>@depth@100ms and /<symbol>@aggTrade to receive order book deltas and aggregated trades.
+Uses WebSocket streams:
 
-Snapshot + buffer sync: follows Binance recommended flow: buffer incoming WS events, GET REST /api/v3/depth snapshot, apply snapshot, then replay buffered deltas that meet update id conditions.
+/depth@100ms → Real-time order book deltas
 
-Order book aggregation: price levels are stored in Map<number, number> for O(1) updates; deltas with amount 0 remove a price level.
+/aggTrade → Aggregated trade stream
 
-Order book UI: two-column layout (Bids left, Asks right), Price / Amount / Cumulative Total columns, spread displayed in center.
+ Accurate Order Book Aggregation
 
-Depth visualization: each row has a background bar whose width is proportional to the row’s cumulative total relative to the largest total on its side.
+Maintains price levels using efficient Map structures (O(1) updates).
 
-Recent trades: shows last 50 trades, new trade flashes color (green = buy, red = sell). Trade direction derived from aggTrade.m (isBuyerMaker) per Binance semantics.
+Handles add/update/remove deltas dynamically.
 
-Performance focus: Map-backed updates, useMemo for sorted slices & totals, minimal state updates and component re-rendering, and capped trade list.
+ Depth Visualization
 
-Important project files
+Each price row displays a colored depth bar (green for bids, red for asks).
 
-pages/
+Bar width proportional to total cumulative volume.
 
-index.tsx – main UI (symbol input, mock toggle, status)
+ Spread Display
 
-api/depth.ts – server-side proxy to Binance REST snapshot (avoids CORS)
+Automatically computes and displays the current Bid–Ask Spread.
 
-api/mock-snapshot.ts – mock snapshot for offline testing
+ Recent Trades Panel
 
-hooks/useBinanceSocket.tsx – WebSocket connection, snapshot sync, buffering, reconnection, mock mode
+Displays the 50 most recent trades.
 
-store/orderbookStore.ts – Zustand store (Maps for bids/asks, trades array, status)
+Price flashes green (buy) or red (sell) for new trades.
 
-components/OrderBook.tsx – order book rendering + depth bars
+ Performance Focus
 
-components/Trades.tsx – recent trades rendering and flash highlight
+Uses useMemo, useCallback, and React.memo to minimize re-renders.
 
-styles/globals.css – Tailwind + visual polish
+Only updates changed data points for a smooth real-time experience.
 
-package.json – scripts & dependencies
+ Mock Mode
 
-Design choices & trade-offs
+Toggle to simulate data when Binance WebSocket is unavailable.
 
-State management: Zustand
+Fetches mock snapshot from /api/mock-snapshot.
 
-Chosen for minimal boilerplate and very fast reads/writes. Global store with direct access to small updater functions keeps components simple and prevents heavy props drilling.
 
-Map for price levels
 
-Map<number, number> provides O(1) updates and avoids recreating giant arrays on every delta. We only derive sorted slices for rendering (top N rows) with useMemo.
+📂 Project Structure
+├── pages/
+│   ├── index.tsx             # Main interface
+│   ├── api/
+│   │   ├── depth.ts          # REST snapshot proxy
+│   │   └── mock-snapshot.ts  # Mock data
+├── hooks/
+│   └── useBinanceSocket.tsx  # WebSocket handler
+├── store/
+│   └── orderbookStore.ts     # Zustand store
+├── components/
+│   ├── OrderBook.tsx         # Live order book UI
+│   └── Trades.tsx            # Recent trades list
+├── styles/
+│   └── globals.css           # Tailwind setup
+└── package.json
 
-Snapshot + buffered WS
 
-Implemented per Binance docs to guarantee correct order-book state while handling out-of-order WS deltas. This increases code complexity but is required for correctness under high-frequency updates.
-
-Server-side snapshot proxy
-
-pages/api/depth proxies REST snapshot requests to Binance to avoid browser CORS restrictions and to make the app deployment-friendly (Vercel / Netlify). This keeps client code simple and reliable.
-
-Mock mode
-
-A Mock toggle that hits /api/mock-snapshot and simulates trades. This is useful for local development or when outbound WebSockets or Binance endpoints are blocked.
-
-Performance vs feature scope
-
-Focused on correctness and UI responsiveness. I intentionally limited the rendered rows (default top 30 per side) and capped trades to 50 to maintain snappy rendering. If more depth visualization is required, we can add virtualization (react-window) while preserving snapshot logic.
